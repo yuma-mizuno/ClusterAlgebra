@@ -317,9 +317,12 @@ def to_away : R N →+* S :=
 
 @[simp]
 lemma to_away_of_function_of_mutation_direction' (v v' : N) (hv : ∃ k : ℤ, v' = k • v) [IsLocalization.Away (1 + z (B v)) S] :
-(to_away S ε v) (1 + z (B v)) = 
-  IsLocalization.mk' S (1 + z (B v))
+(to_away S ε v) (1 + z (B v')) = 
+  IsLocalization.mk' S (1 + z (B v'))
       (1 : Submonoid.powers (1 + z (B v))) := by
+  rcases hv with ⟨k, hk⟩
+  simp? [hk, z_def, one_def, to_away, monomial_to_away, AddMonoidAlgebra.liftNCRingHom, IsLocalization.mk'_one]
+  simp only [smul_neg, zpow_neg, MonoidHom.coe_mk, OneHom.coe_mk]
   dsimp [to_away, monomial_to_away, AddMonoidAlgebra.liftNCRingHom]
   simp only [smul_neg, zpow_neg, MonoidHom.coe_mk, OneHom.coe_mk, map_add, RingHom.coe_mk,
     AddMonoidAlgebra.liftNC_single, AddMonoidHom.coe_coe, map_one, ofAdd_zero, toAdd_one, LinearMap.zero_apply, smul_zero,
@@ -328,7 +331,12 @@ lemma to_away_of_function_of_mutation_direction' (v v' : N) (hv : ∃ k : ℤ, v
   simp only [map_add, AddMonoidAlgebra.liftNC_single, AddMonoidHom.coe_coe, map_one, toAdd_ofAdd, toLin_apply,
     one_mul, map_one]
   rcases hv with ⟨k, hk⟩
-  simp [RingHom.map_add, add_left_inj, RingHom.map_one, IsAlt.self_eq_zero SkewSymmForm.alt, hk]
+  simp only [one_def, z_def, liftNC_single, AddMonoidHom.coe_coe, map_one, ofAdd_zero, toAdd_one,
+  LinearMap.zero_apply, smul_zero, zpow_zero, inv_one, Units.val_one, mul_one, one_mul, hk, map_smul, smul_left,
+  IsAlt.self_eq_zero SkewSymmForm.alt, mul_zero, add_left_inj]
+
+
+  apply map_one
 
 @[simp]
 lemma to_away_of_function_of_self :
