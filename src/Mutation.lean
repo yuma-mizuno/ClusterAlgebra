@@ -478,12 +478,9 @@ set_option synthInstance.maxHeartbeats 1000000
 instance (v : N) : Algebra (R N) (Localization.Away (1 + z (B v))) := by infer_instance
 
 set_option maxHeartbeats 1000000
-local instance (v : N) : IsDomain (Localization.Away (1 + z (B v))) := 
-IsLocalization.isDomain_of_le_nonZeroDivisors (R N)
-  (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
-  -- have := (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
-  -- have := @IsLocalization.isDomain_of_le_nonZeroDivisors (Localization.Away (1 + z (B v))) _ (R N) _ _ _ _ _ this
-  -- (function_of_vector_ne_zero v)
+local instance (v : N) : IsDomain (Localization.Away (1 + z (B v))) := by sorry
+-- IsLocalization.isDomain_of_le_nonZeroDivisors (R N)
+--   (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
 
 -- local attribute [instance]  away.integral_domain
 
@@ -494,10 +491,13 @@ def algebra_of_away_frac : Algebra (Localization.Away (1 + z (B v))) K := by
 -- IsLocalization.  powers_le_nonZeroDivisors_of_noZeroDivisors
   apply RingHom.toAlgebra
   apply @IsLocalization.lift (R N) _ (Submonoid.powers ((1 + z (B v)))) 
-    (Localization.Away (1 + z (B v))) _ _ _ _ _ _ (fun h => IsLocalization.map_units _ _)
+    (Localization.Away (1 + z (B v))) _ _ _ _ _ (algebraMap (R N) K) (fun h => by
+      refine IsLocalization.map_units _ _
+      
+      )
   intro a
   simp
-  apply powers_le_non_zero_divisors_of_no_zero_divisors
+  apply powers_le_nonZeroDivisors_of_noZeroDivisors
   apply function_of_vector_ne_zero
   apply IsFractionRing.no_zero_divisors
 
@@ -519,22 +519,20 @@ IsFractionRing.fieldEquivOfRingEquiv (ring_equiv_away (Localization.Away (1 + z 
 
 lemma mutation_field_equiv_map_monomial (m : Module.Dual ℤ N) : 
 μ.field_equiv K (z m)  = 
-z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect :=
-begin
-  unfold z SeedMutation.field_equiv is_fraction_ring.field_equiv_of_ring_equiv SeedMutation.ring_equiv_away,
+z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect := by
+  dsimp only [z SeedMutation.field_equiv, is_fraction_ring.field_equiv_of_ring_equiv, ring_equiv_away]
   let h_ne := function_of_vector_ne_zero (μ.sign • μ.src_vect),
-  repeat {rw IsLocalization.eq_comp_map_of_lift_of_of_away_frac h_ne μ.Away K},
+  repeat {rw [IsLocalization.eq_comp_map_of_lift_of_of_away_frac h_ne μ.Away K] }
   simp only [fpow_neg, linear_map.map_smul, IsLocalization.ring_equiv_of_ring_equiv_eq, 
     mutation_away_map_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
-    mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul],
-  apply or.inl,
-  unfold SeedMutation.awayUnit function_of_vector,
-  induction m μ.src_vect;
+    mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul]
+  apply or.inl
+  unfold SeedMutation.awayUnit function_of_vector
+  induction m μ.src_vect
   simp only [ring_hom.map_add, units.coe_mk, gpow_neg_succ_of_nat, inv_inj', ring_hom.map_pow,
-      ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat];
-  rw <- AddMonoidAlgebra.one_def;
-  simp only [ring_hom.map_one],
-end
+      ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat]
+  rw <- AddMonoidAlgebra.one_def
+  simp only [ring_hom.map_one]
 
 end mutation_frac
 
