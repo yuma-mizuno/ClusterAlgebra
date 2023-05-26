@@ -466,24 +466,41 @@ section mutation_frac
 
 variable [IsDomain (R N)] (K : Type _) [Field K] [Algebra (R N) K] [IsFractionRing (R N) K] (ε : ℤˣ)
 
--- def ring_of_function.integral_domain : Domain (R N) := 
--- is_integral_domain.to_integral_domain _ (by assumption)
-
 -- local attribute [instance] ring_of_function.integral_domain 
 
 -- abbreviation SeedMutation.Away := localization.Away (function_of_vector (μ.sign • μ.src_vect))
 
--- def away.integral_domain : integral_domain μ.Away :=
--- IsLocalization.integral_domain_of_le_non_zero_divisors μ.Away
---   (powers_le_non_zero_divisors_of_no_zero_divisors (function_of_vector_ne_zero (μ.sign • μ.src_vect)))
+private abbrev z  (m : Module.Dual ℤ N) : R N := AddMonoidAlgebra.single m 1
+
+private lemma z_def  (m : Module.Dual ℤ N) : z m = AddMonoidAlgebra.single m 1 := rfl
+
+set_option synthInstance.maxHeartbeats 1000000
+instance (v : N) : Algebra (R N) (Localization.Away (1 + z (B v))) := by infer_instance
+
+set_option maxHeartbeats 1000000
+local instance (v : N) : IsDomain (Localization.Away (1 + z (B v))) := 
+IsLocalization.isDomain_of_le_nonZeroDivisors (R N)
+  (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
+  -- have := (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
+  -- have := @IsLocalization.isDomain_of_le_nonZeroDivisors (Localization.Away (1 + z (B v))) _ (R N) _ _ _ _ _ this
+  -- (function_of_vector_ne_zero v)
 
 -- local attribute [instance]  away.integral_domain
 
 variable (v : N) 
 -- [IsLocalization.Away (1 + z (B v)) K]
 
-def algebra_of_away_frac : Algebra (Localization.Away (1 + z (B v))) K :=
-IsLocalization.  powers_le_nonZeroDivisors_of_noZeroDivisors
+def algebra_of_away_frac : Algebra (Localization.Away (1 + z (B v))) K := by
+-- IsLocalization.  powers_le_nonZeroDivisors_of_noZeroDivisors
+  apply RingHom.toAlgebra
+  apply @IsLocalization.lift (R N) _ (Submonoid.powers ((1 + z (B v)))) 
+    (Localization.Away (1 + z (B v))) _ _ _ _ _ _ (fun h => IsLocalization.map_units _ _)
+  intro a
+  simp
+  apply powers_le_non_zero_divisors_of_no_zero_divisors
+  apply function_of_vector_ne_zero
+  apply IsFractionRing.no_zero_divisors
+
 
 -- local attribute[instance] SeedMutation.algebra_of_away_frac
 
@@ -494,11 +511,11 @@ IsLocalization.is_fraction_of_algebra_of_away_frac _ μ.Away K
 local attribute[instance] SeedMutation.is_fraction_of_algebra_of_away_frac
 
 private def z 
-{K : Type*} [field K] [algebra (R N) K] [is_fraction_ring (R N) K] 
+{K : Type _} [Field K] [Algebra (R N) K] [IsFractionRing (R N) K] 
 (m : Module.Dual ℤ N) := algebraMap (R N) K (AddMonoidAlgebra.single m 1)
 
-def SeedMutation.field_equiv : K ≃+* K := 
-is_fraction_ring.field_equiv_of_ring_equiv (μ.ring_equiv_away μ.Away 1)
+def SeedMutation.field_equiv (ε : ℤˣ) (v : N) : K ≃+* K := 
+IsFractionRing.fieldEquivOfRingEquiv (ring_equiv_away (Localization.Away (1 + z (B v))) ε v)
 
 lemma mutation_field_equiv_map_monomial (m : Module.Dual ℤ N) : 
 μ.field_equiv K (z m)  = 
