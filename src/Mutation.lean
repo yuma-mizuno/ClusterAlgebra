@@ -321,22 +321,8 @@ lemma to_away_of_function_of_mutation_direction' (v v' : N) (hv : ∃ k : ℤ, v
   IsLocalization.mk' S (1 + z (B v'))
       (1 : Submonoid.powers (1 + z (B v))) := by
   rcases hv with ⟨k, hk⟩
-  simp? [hk, z_def, one_def, to_away, monomial_to_away, AddMonoidAlgebra.liftNCRingHom, IsLocalization.mk'_one]
-  simp only [smul_neg, zpow_neg, MonoidHom.coe_mk, OneHom.coe_mk]
-  dsimp [to_away, monomial_to_away, AddMonoidAlgebra.liftNCRingHom]
-  simp only [smul_neg, zpow_neg, MonoidHom.coe_mk, OneHom.coe_mk, map_add, RingHom.coe_mk,
-    AddMonoidAlgebra.liftNC_single, AddMonoidHom.coe_coe, map_one, ofAdd_zero, toAdd_one, LinearMap.zero_apply, smul_zero,
-    zpow_zero, inv_one, Units.val_one, mul_one, one_mul, toAdd_ofAdd, toLin_apply]
-  simp_rw [IsLocalization.mk'_one]
-  simp only [map_add, AddMonoidAlgebra.liftNC_single, AddMonoidHom.coe_coe, map_one, toAdd_ofAdd, toLin_apply,
-    one_mul, map_one]
-  rcases hv with ⟨k, hk⟩
-  simp only [one_def, z_def, liftNC_single, AddMonoidHom.coe_coe, map_one, ofAdd_zero, toAdd_one,
-  LinearMap.zero_apply, smul_zero, zpow_zero, inv_one, Units.val_one, mul_one, one_mul, hk, map_smul, smul_left,
-  IsAlt.self_eq_zero SkewSymmForm.alt, mul_zero, add_left_inj]
-
-
-  apply map_one
+  simp [one_def, z_def, to_away, liftNCRingHom, monomial_to_away, IsLocalization.mk'_one, 
+    hk, liftNC_single, IsAlt.self_eq_zero SkewSymmForm.alt]
 
 @[simp]
 lemma to_away_of_function_of_self :
@@ -395,7 +381,7 @@ lemma mutation_away_map_monomial (v : N) [IsLocalization.Away (1 + z (B v)) S] (
 
 @[simp]
 lemma mutation_away_eq_self_of_gpow_of_unit (k : ℤ) : 
-    ring_hom_away S ε v ↑((awayUnit S v) ^ k) = ↑((awayUnit S v) ^ k) := by
+    ring_hom_away S ε v (awayUnit S v ^ k) = awayUnit S v ^ k := by
   dsimp [ring_hom_away, IsLocalization.Away.lift, awayUnit]
   rcases k with (k | k)
   · simp only [Int.ofNat_eq_coe, zpow_coe_nat, Units.val_pow_eq_pow_val, map_pow]
@@ -490,9 +476,12 @@ variable (v : N)
 def algebra_of_away_frac : Algebra (Localization.Away (1 + z (B v))) K := by
 -- IsLocalization.  powers_le_nonZeroDivisors_of_noZeroDivisors
   apply RingHom.toAlgebra
-  apply @IsLocalization.lift (R N) _ (Submonoid.powers ((1 + z (B v)))) 
-    (Localization.Away (1 + z (B v))) _ _ _ _ _ (algebraMap (R N) K) (fun h => by
-      refine IsLocalization.map_units _ _
+  have H := IsLocalization.localizationLocalizationSubmodule (Submonoid.powers (1 + z (B v))) (nonZeroDivisors ((Localization.Away (1 + z (B v)))))
+
+  apply IsLocalization.lift (fun h => by
+      apply @IsLocalization.map_units _ _ H
+        
+      -- IsLocalization.localizationLocalizationSubmodule (Localization.Away (1 + z (B v))) _)
       
       )
   intro a
