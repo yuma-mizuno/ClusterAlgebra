@@ -236,10 +236,12 @@ private abbrev z  (m : Module.Dual ℤ N) : R N := AddMonoidAlgebra.single m 1
 
 private lemma z_def  (m : Module.Dual ℤ N) : z m = AddMonoidAlgebra.single m 1 := rfl
 
-def function_of_vector' (n : N) : (R N) := 1 + z (B n)
+private def f (v : N) := 1 + z (B v)
 
-lemma function_of_vector_ne_zero (v : N) : 1 + z (B v) ≠ (0 : R N) := by
-  dsimp only [AddMonoidAlgebra.one_def]
+def function_of_vector' (n : N) : (R N) := f n
+
+lemma function_of_vector_ne_zero (v : N) : f v ≠ (0 : R N) := by
+  dsimp only [AddMonoidAlgebra.one_def, f]
   cases' eq_or_ne (B v) 0 with H H
   · rw [H, Finsupp.nonzero_iff_exists, ←AddMonoidAlgebra.single_add]
     exact ⟨0, by simp⟩
@@ -252,7 +254,7 @@ lemma function_of_vector_ne_zero (v : N) : 1 + z (B v) ≠ (0 : R N) := by
     rw [Finsupp.add_apply, this]
     simp
 
--- lemma function_of_vector_ne_zero' (v : N) : 1 + z (B v) ≠ (0 : R N) := by
+-- lemma function_of_vector_ne_zero' (v : N) : f v ≠ (0 : R N) := by
 --   cases' eq_or_ne (B v) 0 with H H
 --   · rw [H]
 --     rw [one_def]
@@ -275,29 +277,31 @@ section mutation_away
 
 variable (S : Type _) [CommRing S] [IsDomain S] [Algebra (R N) S]
 
-instance : Algebra (AddMonoidAlgebra ℤ (Module.Dual ℤ N)) S := by assumption
-instance : Algebra (R N) S := by assumption
+local instance : Algebra (AddMonoidAlgebra ℤ (Module.Dual ℤ N)) S := by assumption
+local instance : Algebra (R N) S := by assumption
 
-variable (ε : ℤˣ) (v : N) [IsLocalization.Away (1 + z (B v)) S] 
+variable (ε : ℤˣ) (v : N)
 
 open AddMonoidAlgebra
 
-instance : Algebra (AddMonoidAlgebra ℤ ((Module.Dual ℤ N))) S := by assumption
-instance : Algebra (R N) S := by assumption
+local instance : Algebra (AddMonoidAlgebra ℤ ((Module.Dual ℤ N))) S := by assumption
+local instance : Algebra (R N) S := by assumption
+
+variable [IsLocalization.Away (f v) S]
 
 def awayUnit : Units S where
-  val := algebraMap (R N) S (1 + z (B v))
-  inv := IsLocalization.mk' S 1 ⟨1 + z (B v), Submonoid.mem_powers (1 + z (B v))⟩
+  val := algebraMap (R N) S (f v)
+  inv := IsLocalization.mk' S 1 ⟨f v, Submonoid.mem_powers (f v)⟩
   val_inv := by rw [IsLocalization.mul_mk'_eq_mk'_of_mul, mul_one, IsLocalization.mk'_self]
   inv_val := by rw [mul_comm, IsLocalization.mul_mk'_eq_mk'_of_mul, mul_one, IsLocalization.mk'_self]
 
 def monomial_to_away : Multiplicative (Module.Dual ℤ N) →* S :=
 { toFun := fun m => 
     IsLocalization.mk' S
-    (AddMonoidAlgebra.single (Multiplicative.toAdd m) 1 : R N) (1 : Submonoid.powers (1 + z (B v)))
+    (AddMonoidAlgebra.single (Multiplicative.toAdd m) 1 : R N) (1 : Submonoid.powers (f v))
         * ↑((awayUnit S v)^(ε • (-(Multiplicative.toAdd m) v))),
   map_one' := by
-    suffices IsLocalization.mk' S (AddMonoidAlgebra.single 0 1) (1 : Submonoid.powers (1 + z (B v))) = 1 by simpa
+    suffices IsLocalization.mk' S (AddMonoidAlgebra.single 0 1) (1 : Submonoid.powers (f v)) = 1 by simpa
     rw [IsLocalization.mk'_one]
     apply map_one
   map_mul' := fun x y => by
@@ -305,7 +309,7 @@ def monomial_to_away : Multiplicative (Module.Dual ℤ N) →* S :=
       neg_add_rev, LinearMap.add_apply, toAdd_mul,
       smul_add, smul_neg, zpow_neg]
     rw [<- one_mul (1 : ℤ), ←AddMonoidAlgebra.single_mul_single]
-    rw [<- one_mul (1 : Submonoid.powers (1 + z (B v))),
+    rw [<- one_mul (1 : Submonoid.powers (f v)),
       IsLocalization.mk'_mul]
     rw [mul_one]
     simp only [mul_one, zpow_add, zpow_neg, zpow_sub, Int.mul_neg_eq_neg_mul_symm, Units.val_mul]
@@ -316,36 +320,36 @@ def to_away : R N →+* S :=
 (monomial_to_away S ε v) (fun _ _ => (Commute.all _ _))
 
 @[simp]
-lemma to_away_of_function_of_mutation_direction' (v v' : N) (hv : ∃ k : ℤ, v' = k • v) [IsLocalization.Away (1 + z (B v)) S] :
-(to_away S ε v) (1 + z (B v')) = 
-  IsLocalization.mk' S (1 + z (B v'))
-      (1 : Submonoid.powers (1 + z (B v))) := by
+lemma to_away_of_function_of_mutation_direction' (v v' : N) (hv : ∃ k : ℤ, v' = k • v) [IsLocalization.Away (f v) S] :
+(to_away S ε v) (f v') = 
+  IsLocalization.mk' S (f v')
+      (1 : Submonoid.powers (f v)) := by
   rcases hv with ⟨k, hk⟩
   simp [one_def, z_def, to_away, liftNCRingHom, monomial_to_away, IsLocalization.mk'_one, 
-    hk, liftNC_single, IsAlt.self_eq_zero SkewSymmForm.alt]
+    hk, liftNC_single, IsAlt.self_eq_zero SkewSymmForm.alt, f]
 
 @[simp]
 lemma to_away_of_function_of_self :
-    (to_away S ε v) (1 + z (B v)) = 
-      IsLocalization.mk' S (1 + z (B v))
-          (1 : Submonoid.powers (1 + z (B v))) :=
+    (to_away S ε v) (f v) = 
+      IsLocalization.mk' S (f v)
+          (1 : Submonoid.powers (f v)) :=
   to_away_of_function_of_mutation_direction' S ε v v ⟨1, (one_smul ℤ v).symm⟩
 
 -- @[simp]
 -- lemma to_away_of_function_of_neg :
 --     (to_away S ε v) (1 + z (B (-v))) = 
 --       IsLocalization.mk' S (1 + z (B (-v)))
---           (1 : Submonoid.powers (1 + z (B v))) :=
+--           (1 : Submonoid.powers (f v)) :=
 --   to_away_of_function_of_mutation_direction' S ε v (-v) ⟨-1, by simp⟩
     
 
 lemma is_unit_to_away : 
-    IsUnit (to_away S ε v (1 + z (B v))) := by
+    IsUnit (to_away S ε v (f v)) := by
   rw [to_away_of_function_of_mutation_direction' S ε v v ⟨1, by simp⟩, IsLocalization.mk'_one]
-  exact IsLocalization.map_units S ⟨1 + z (B v), Submonoid.mem_powers _⟩
+  exact IsLocalization.map_units S ⟨f v, Submonoid.mem_powers _⟩
 
 def ring_hom_away : S →+* S :=
-IsLocalization.Away.lift (1 + z (B v)) (is_unit_to_away S ε v)
+IsLocalization.Away.lift (f v) (is_unit_to_away S ε v)
 
 
 @[simp] lemma mutation_away_map_const  : 
@@ -364,7 +368,7 @@ algebraMap (R N) S (AddMonoidAlgebra.single 0 b) := by
   apply congrFun <| mutation_away_map_const _ _ _
 
 @[simp] 
-lemma mutation_away_map_monomial (v : N) [IsLocalization.Away (1 + z (B v)) S] (a : Multiplicative (Module.Dual ℤ N)) : 
+lemma mutation_away_map_monomial (v : N) [IsLocalization.Away (f v) S] (a : Multiplicative (Module.Dual ℤ N)) : 
     ring_hom_away S ε v ((algebraMap (R N) S) (AddMonoidAlgebra.single a 1)) =
       algebraMap (R N) S (AddMonoidAlgebra.single a 1) * ↑(awayUnit S v ^ (ε • (- a v))) := by
   dsimp only [ring_hom_away, IsLocalization.Away.lift]
@@ -399,7 +403,7 @@ lemma mutation_away_eq_self_of_gpow_of_unit (k : ℤ) :
     rw [one_mul, mul_one, IsLocalization.mk'_self]
 
 -- @[simp]
--- lemma mutation_away_eq_neg_of_gpow_of_unit (v : N) [IsLocalization.Away (1 + z (B v)) S] (k : ℤ) : 
+-- lemma mutation_away_eq_neg_of_gpow_of_unit (v : N) [IsLocalization.Away (f v) S] (k : ℤ) : 
 --     SeedMutation.ring_hom_away' S ε v ↑((SeedMutation.awayUnit S (-v)) ^ k) = ↑((SeedMutation.awayUnit S (-v)) ^ k) := by
 --   dsimp [SeedMutation.ring_hom_away', IsLocalization.Away.lift, SeedMutation.awayUnit]
 --   rcases k with (k | k)
@@ -418,7 +422,7 @@ lemma mutation_away_eq_self_of_gpow_of_unit (k : ℤ) :
 --     rw [←IsLocalization.mk'_mul]
 --     rw [one_mul, mul_one, IsLocalization.mk'_self]
 
-lemma ring_equiv_away_hom_inv_aux (ε ε' : ℤˣ) (hε : ε' = - ε) (v : N) [IsLocalization.Away (1 + z (B v)) S] : 
+lemma ring_equiv_away_hom_inv_aux (ε ε' : ℤˣ) (hε : ε' = - ε) (v : N) [IsLocalization.Away (f v) S] : 
   ((ring_hom_away S ε' v).comp (ring_hom_away S ε v)).comp (algebraMap (R N) S) = algebraMap (R N) S := by
     apply AddMonoidAlgebra.ringHom_ext <;> intro a
     · simp 
@@ -435,14 +439,14 @@ lemma IsLocalization.lift_id' {R : Type _} [CommSemiring R] (M : Submonoid R) (S
   ext
   apply IsLocalization.lift_id
 
-def ring_equiv_away (v : N) [IsLocalization.Away (1 + z (B v)) S] : S ≃+* S :=
+def ring_equiv_away (v : N) [IsLocalization.Away (f v) S] : S ≃+* S :=
   RingEquiv.ofHomInv (ring_hom_away S ε v) (ring_hom_away S (-ε) v)
     (by
-      rw [←IsLocalization.lift_id' (Submonoid.powers (1 + z (B v))), IsLocalization.lift_unique]
+      rw [←IsLocalization.lift_id' (Submonoid.powers (f v)), IsLocalization.lift_unique]
       rw [←Function.funext_iff]
       apply congr_arg FunLike.coe (ring_equiv_away_hom_inv_aux S ε (-ε) (by simp) v))
     (by
-      rw [←IsLocalization.lift_id' (Submonoid.powers (1 + z (B v))), IsLocalization.lift_unique]
+      rw [←IsLocalization.lift_id' (Submonoid.powers (f v)), IsLocalization.lift_unique]
       rw [←Function.funext_iff]
       apply congr_arg FunLike.coe (ring_equiv_away_hom_inv_aux S (-ε) ε (by simp) v))
 
@@ -460,68 +464,76 @@ private abbrev z  (m : Module.Dual ℤ N) : R N := AddMonoidAlgebra.single m 1
 
 private lemma z_def  (m : Module.Dual ℤ N) : z m = AddMonoidAlgebra.single m 1 := rfl
 
-set_option synthInstance.maxHeartbeats 1000000
-instance (v : N) : Algebra (R N) (Localization.Away (1 + z (B v))) := by infer_instance
+set_option synthInstance.maxHeartbeats 1000000 in
+instance (v : N) : Algebra (R N) (Localization.Away (f v)) := by infer_instance
 
-set_option maxHeartbeats 1000000
-local instance (v : N) : IsDomain (Localization.Away (1 + z (B v))) := by sorry
--- IsLocalization.isDomain_of_le_nonZeroDivisors (R N)
---   (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
+set_option maxHeartbeats 1000000 in
+instance domain (v : N) : IsDomain (Localization.Away (f v)) := 
+IsLocalization.isDomain_of_le_nonZeroDivisors (R N)
+  (powers_le_nonZeroDivisors_of_noZeroDivisors ((function_of_vector_ne_zero v)))
 
 -- local attribute [instance]  away.integral_domain
 
 variable (v : N) 
--- [IsLocalization.Away (1 + z (B v)) K]
+-- [IsLocalization.Away (f v) K]
 
-def algebra_of_away_frac : Algebra (Localization.Away (1 + z (B v))) K := by
--- IsLocalization.  powers_le_nonZeroDivisors_of_noZeroDivisors
+instance : Algebra (Localization.Away (f v)) K := by
   apply RingHom.toAlgebra
-  have H := IsLocalization.localizationLocalizationSubmodule (Submonoid.powers (1 + z (B v))) (nonZeroDivisors ((Localization.Away (1 + z (B v)))))
-
-  apply IsLocalization.lift (fun h => by
-      apply @IsLocalization.map_units _ _ H
-        
-      -- IsLocalization.localizationLocalizationSubmodule (Localization.Away (1 + z (B v))) _)
-      
-      )
+  apply @IsLocalization.lift (R N) _ (Submonoid.powers (f v)) _ _ _ _ _ _ (algebraMap (R N) K)
   intro a
-  simp
-  apply powers_le_nonZeroDivisors_of_noZeroDivisors
-  apply function_of_vector_ne_zero
-  apply IsFractionRing.no_zero_divisors
+  have ha := powers_le_nonZeroDivisors_of_noZeroDivisors (function_of_vector_ne_zero v) a.2
+  apply IsLocalization.map_units _ (⟨a.1, ha⟩ : nonZeroDivisors (R N))
 
+
+set_option maxHeartbeats 2000000 in
+instance : IsScalarTower (R N) (Localization.Away (f v)) K := 
+IsLocalization.localization_isScalarTower_of_submonoid_le (Localization.Away (f v)) K (Submonoid.powers (f v)) (nonZeroDivisors (R N)) (powers_le_nonZeroDivisors_of_noZeroDivisors (function_of_vector_ne_zero v))
 
 -- local attribute[instance] SeedMutation.algebra_of_away_frac
 
-def SeedMutation.is_fraction_of_algebra_of_away_frac : 
-@is_fraction_ring μ.Away _ K _ (μ.algebra_of_away_frac K) :=
-IsLocalization.is_fraction_of_algebra_of_away_frac _ μ.Away K
+-- def SeedMutation.is_fraction_of_algebra_of_away_frac : 
+-- @is_fraction_ring μ.Away _ K _ (μ.algebra_of_away_frac K) :=
+-- IsLocalization.is_fraction_of_algebra_of_away_frac _ μ.Away K
 
-local attribute[instance] SeedMutation.is_fraction_of_algebra_of_away_frac
 
-private def z 
-{K : Type _} [Field K] [Algebra (R N) K] [IsFractionRing (R N) K] 
-(m : Module.Dual ℤ N) := algebraMap (R N) K (AddMonoidAlgebra.single m 1)
+
+set_option maxHeartbeats 2000000 in
+instance fraction : IsFractionRing (Localization.Away (f v)) K := by
+  apply IsFractionRing.isFractionRing_of_isDomain_of_isLocalization (Submonoid.powers (f v))  (Localization.Away (f v)) K
+  -- let M := IsLocalization.localizationLocalizationSubmodule (Submonoid.powers (f v)) (nonZeroDivisors (Localization.Away (f v)))
+  -- have h := IsLocalization.localization_localization_isLocalization (Submonoid.powers (f v)) (nonZeroDivisors (Localization.Away (f v)))
+
+-- local attribute[instance] SeedMutation.is_fraction_of_algebra_of_away_frac
 
 def SeedMutation.field_equiv (ε : ℤˣ) (v : N) : K ≃+* K := 
-IsFractionRing.fieldEquivOfRingEquiv (ring_equiv_away (Localization.Away (1 + z (B v))) ε v)
+IsFractionRing.fieldEquivOfRingEquiv (ring_equiv_away (Localization.Away (f v)) ε v)
 
-lemma mutation_field_equiv_map_monomial (m : Module.Dual ℤ N) : 
-μ.field_equiv K (z m)  = 
-z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect := by
-  dsimp only [z SeedMutation.field_equiv, is_fraction_ring.field_equiv_of_ring_equiv, ring_equiv_away]
-  let h_ne := function_of_vector_ne_zero (μ.sign • μ.src_vect),
-  repeat {rw [IsLocalization.eq_comp_map_of_lift_of_of_away_frac h_ne μ.Away K] }
-  simp only [fpow_neg, linear_map.map_smul, IsLocalization.ring_equiv_of_ring_equiv_eq, 
-    mutation_away_map_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
-    mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul]
-  apply or.inl
-  unfold SeedMutation.awayUnit function_of_vector
-  induction m μ.src_vect
-  simp only [ring_hom.map_add, units.coe_mk, gpow_neg_succ_of_nat, inv_inj', ring_hom.map_pow,
-      ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat]
-  rw <- AddMonoidAlgebra.one_def
-  simp only [ring_hom.map_one]
+
+
+-- section
+
+-- private def z' 
+-- {K : Type _} [Field K] [Algebra (R N) K] [IsFractionRing (R N) K] 
+-- (m : Module.Dual ℤ N) := algebraMap (R N) K (AddMonoidAlgebra.single m 1)
+
+-- lemma mutation_field_equiv_map_monomial (m : Module.Dual ℤ N) : 
+-- μ.field_equiv K (z m)  = 
+-- z m * (1 + z (B (μ.sign • μ.src_vect))) ^ - m μ.src_vect := by
+--   dsimp only [z SeedMutation.field_equiv, is_fraction_ring.field_equiv_of_ring_equiv, ring_equiv_away]
+--   let h_ne := function_of_vector_ne_zero (μ.sign • μ.src_vect),
+--   repeat {rw [IsLocalization.eq_comp_map_of_lift_of_of_away_frac h_ne μ.Away K] }
+--   simp only [fpow_neg, linear_map.map_smul, IsLocalization.ring_equiv_of_ring_equiv_eq, 
+--     mutation_away_map_monomial, algebra.id.smul_eq_mul, one_mul, gpow_neg, mul_eq_mul_left_iff, inv_inj', 
+--     mul_neg_eq_neg_mul_symm, ring_hom.map_units_inv, ring_equiv.of_hom_inv_apply, ring_hom.map_mul]
+--   apply or.inl
+--   unfold SeedMutation.awayUnit function_of_vector
+--   induction m μ.src_vect
+--   simp only [ring_hom.map_add, units.coe_mk, gpow_neg_succ_of_nat, inv_inj', ring_hom.map_pow,
+--       ring_hom.map_units_inv, linear_map.map_smul, units.coe_pow, int.of_nat_eq_coe, gpow_coe_nat]
+--   rw <- AddMonoidAlgebra.one_def
+--   simp only [ring_hom.map_one]
+
+-- end
 
 end mutation_frac
 
